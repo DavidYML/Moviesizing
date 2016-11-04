@@ -5,9 +5,12 @@ import android.graphics.Movie;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.annotation.RequiresApi;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -23,6 +26,7 @@ import android.view.MenuItem;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 
@@ -50,111 +54,141 @@ public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, AppController.OnMovieListChangedListener {
 
 
-
+    private static final String KEY_RECYCLER_STATE = "recyclerState";
     private RecyclerView recyclerView;
     private Configuration configuration;
     MovieListAdapter movieListAdapter;
     private ArrayAdapter<String> listAdapter;
+    private Bundle mBundleRecyclerViewState;
 
-    @TargetApi(Build.VERSION_CODES.KITKAT)
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    private LinearLayoutManager linearLayoutManager;
+    private EndlessRecyclerScrollListener endlessScrollListener;
+
+
     @Override
+
+
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(id.toolbar);
-        setSupportActionBar(toolbar);
+        super.onCreate( savedInstanceState );
+        setContentView( layout.activity_main );
+        Toolbar toolbar = (Toolbar) findViewById( id.toolbar );
+        setSupportActionBar( toolbar );
 
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
+        FloatingActionButton fab = (FloatingActionButton) findViewById( id.fab );
+        fab.setOnClickListener( new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                Snackbar.make( view, "Replace with your own action", Snackbar.LENGTH_LONG )
+                        .setAction( "Action", null ).show();
             }
-        });
+        } );
 
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(id.drawer_layout);
+        DrawerLayout drawer = (DrawerLayout) findViewById( id.drawer_layout );
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, string.navigation_drawer_open, string.navigation_drawer_close);
-        drawer.setDrawerListener(toggle);
+                this, drawer, toolbar, string.navigation_drawer_open, string.navigation_drawer_close );
+        drawer.setDrawerListener( toggle );
         toggle.syncState();
 
-        NavigationView navigationView = (NavigationView) findViewById(id.nav_view);
-        navigationView.setNavigationItemSelectedListener(this);
+        NavigationView navigationView = (NavigationView) findViewById( id.nav_view );
+        navigationView.setNavigationItemSelectedListener( this );
 
 //        listView = (ListView) findViewById(R.id.ListView);
 //        listAdapter= new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1, AppController.getmInstance().getList());
 //        listView.setAdapter(listAdapter);
 
-        recyclerView = (RecyclerView) findViewById(R.id.recycleView);
+        recyclerView = (RecyclerView) findViewById( R.id.recycleView );
 
         //change the view of the recycleView
 
-        recyclerView.setLayoutManager((new LinearLayoutManager(this)));
-        movieListAdapter = new MovieListAdapter(this,AppController.getmInstance().getMovieList());
-        recyclerView.setAdapter(movieListAdapter);
-
-
+        linearLayoutManager = new LinearLayoutManager( this );
+        recyclerView.setLayoutManager(  linearLayoutManager);
+        movieListAdapter = new MovieListAdapter( this, AppController.getmInstance().getMovieList() );
+        recyclerView.setAdapter( movieListAdapter );
 
 
         //todo add OnClickListener
 
 
-
-
         DisplayImageOptions defaultOptions = new DisplayImageOptions.Builder()
-                .cacheInMemory(true)
-                .cacheOnDisk(true)
+                .cacheInMemory( true )
+                .cacheOnDisk( true )
 //                .showImageForEmptyUri(R.drawable.ic_cry_face)
 //                .showImageOnLoading(R.drawable.ic_cry_face)
-                .displayer(new FadeInBitmapDisplayer(500))
+                .displayer( new FadeInBitmapDisplayer( 500 ) )
                 .build();
 
-        ImageLoaderConfiguration config = new ImageLoaderConfiguration.Builder(getApplicationContext())
-                .defaultDisplayImageOptions(defaultOptions)
+        ImageLoaderConfiguration config = new ImageLoaderConfiguration.Builder( getApplicationContext() )
+                .defaultDisplayImageOptions( defaultOptions )
                 .denyCacheImageMultipleSizesInMemory()
                 .build();
 
-        ImageLoader.getInstance().init(config);
+        ImageLoader.getInstance().init( config );
 
-
+        endlessScrollListener = new EndlessRecyclerScrollListener(linearLayoutManager) {
+            @Override
+            public void onLoadMore(int page, int totalItemsCount, RecyclerView view) {
+                // Triggered only when new data needs to be appended to the list
+                // Add whatever code is needed to append new items to the bottom of the list
+                AppController.getmInstance().loadSearchMovieInfoByPage(page);
+            }
+        };
+        // Adds the scroll listener to RecyclerView
+        recyclerView.addOnScrollListener(endlessScrollListener);
 
 
 
     }
+
+
+
+
+
 
 
 
 
     @Override
     public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(id.drawer_layout);
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
+        DrawerLayout drawer = (DrawerLayout) findViewById( id.drawer_layout );
+        if (drawer.isDrawerOpen( GravityCompat.START )) {
+            drawer.closeDrawer( GravityCompat.START );
         } else {
             super.onBackPressed();
         }
     }
+
+
     @Override
     protected void onResume() {
         super.onResume();
-        AppController.getmInstance().addOnMovieListChangedListener(this);
-        movieListAdapter.notifyDataSetChanged();
+        AppController.getmInstance().addOnMovieListChangedListener( this );
+//        movieListAdapter.notifyDataSetChanged();
+
+        if (mBundleRecyclerViewState != null) {
+            Parcelable listState = mBundleRecyclerViewState.getParcelable( KEY_RECYCLER_STATE );
+            recyclerView.getLayoutManager().onRestoreInstanceState( listState );
+        }
     }
 
     @Override
-    protected void onPause(){
+    protected void onPause() {
         super.onPause();
-        AppController.getmInstance().removeMovieListChangedListener(this);
+
+
+        mBundleRecyclerViewState = new Bundle();
+        Parcelable listState = recyclerView.getLayoutManager().onSaveInstanceState();
+        mBundleRecyclerViewState.putParcelable( KEY_RECYCLER_STATE, listState );
+
+        AppController.getmInstance().removeMovieListChangedListener( this );
     }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.main, menu);
+        getMenuInflater().inflate( R.menu.main, menu );
         return true;
     }
 
@@ -170,7 +204,7 @@ public class MainActivity extends AppCompatActivity
             return true;
         }
 
-        return super.onOptionsItemSelected(item);
+        return super.onOptionsItemSelected( item );
     }
 
     @SuppressWarnings("StatementWithEmptyBody")
@@ -193,17 +227,24 @@ public class MainActivity extends AppCompatActivity
 
         }
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
+        DrawerLayout drawer = (DrawerLayout) findViewById( R.id.drawer_layout );
+        drawer.closeDrawer( GravityCompat.START );
         return true;
     }
 
     @Override
     public void onMovieListChanged() {
         movieListAdapter.notifyDataSetChanged();
+
+        if (mBundleRecyclerViewState != null) {
+            Parcelable listState = mBundleRecyclerViewState.getParcelable( KEY_RECYCLER_STATE );
+            recyclerView.getLayoutManager().onRestoreInstanceState( listState );
+        }
+
+
+        class EndlessRecyclerScrollListener {
+
+
+        }
     }
-
-
-
-
 }

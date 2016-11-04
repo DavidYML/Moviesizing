@@ -53,7 +53,7 @@ public class MovieListAdapter extends RecyclerView.Adapter<MovieViewHolder> {
         holder.getDescriptionTextView().setText(currentMovie.getOverview());
 //        holder.getImageView().setImageResource(currentMovie.g());
 
-            URL imageUrl = AppController.getmInstance().createImageUrl(currentMovie.getPosterPath(),"w92");
+            URL imageUrl = AppController.getmInstance().createImageUrl(currentMovie.getPosterPath(),"w342");
             ImageLoader.getInstance().displayImage(imageUrl.toString(),holder.getImageView());
         holder.getCardView().setOnClickListener(new View.OnClickListener() {
             @Override
