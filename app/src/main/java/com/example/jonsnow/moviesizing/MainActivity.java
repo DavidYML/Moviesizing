@@ -126,16 +126,17 @@ public class MainActivity extends AppCompatActivity
 
         ImageLoader.getInstance().init( config );
 
-        endlessScrollListener = new EndlessRecyclerScrollListener(linearLayoutManager) {
-            @Override
-            public void onLoadMore(int page, int totalItemsCount, RecyclerView view) {
-                // Triggered only when new data needs to be appended to the list
-                // Add whatever code is needed to append new items to the bottom of the list
-                AppController.getmInstance().loadSearchMovieInfoByPage(page);
-            }
-        };
-        // Adds the scroll listener to RecyclerView
-        recyclerView.addOnScrollListener(endlessScrollListener);
+//        Onderaan zorgt voor eindeloze scrollen !!!!
+//          endlessScrollListener = new EndlessRecyclerScrollListener(linearLayoutManager) {
+//            @Override
+//            public void onLoadMore(int page, int totalItemsCount, RecyclerView view) {
+//                // Triggered only when new data needs to be appended to the list
+//                // Add whatever code is needed to append new items to the bottom of the list
+//                AppController.getmInstance().loadSearchMovieInfoByPage(page);
+//            }
+//        };
+//        // Adds the scroll listener to RecyclerView
+//        recyclerView.addOnScrollListener(endlessScrollListener);
 
 
 
