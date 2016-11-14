@@ -11,9 +11,12 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SearchView;
 import android.util.Log;
+import android.view.MenuInflater;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -47,11 +50,13 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import static android.R.attr.id;
 import static com.example.jonsnow.moviesizing.R.*;
 
 
+
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener, AppController.OnMovieListChangedListener {
+        implements NavigationView.OnNavigationItemSelectedListener, AppController.OnMovieListChangedListener, SearchView.OnQueryTextListener {
 
 
     private static final String KEY_RECYCLER_STATE = "recyclerState";
@@ -70,12 +75,12 @@ public class MainActivity extends AppCompatActivity
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate( savedInstanceState );
-        setContentView( layout.activity_main );
-        Toolbar toolbar = (Toolbar) findViewById( id.toolbar );
+        setContentView( R.layout.activity_main );
+        Toolbar toolbar = (Toolbar) findViewById( R.id.toolbar );
         setSupportActionBar( toolbar );
 
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById( id.fab );
+        FloatingActionButton fab = (FloatingActionButton) findViewById( R.id.fab );
         fab.setOnClickListener( new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -85,13 +90,13 @@ public class MainActivity extends AppCompatActivity
         } );
 
 
-        DrawerLayout drawer = (DrawerLayout) findViewById( id.drawer_layout );
+        DrawerLayout drawer = (DrawerLayout) findViewById( R.id.drawer_layout );
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, string.navigation_drawer_open, string.navigation_drawer_close );
+                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close );
         drawer.setDrawerListener( toggle );
         toggle.syncState();
 
-        NavigationView navigationView = (NavigationView) findViewById( id.nav_view );
+        NavigationView navigationView = (NavigationView) findViewById( R.id.nav_view );
         navigationView.setNavigationItemSelectedListener( this );
 
 //        listView = (ListView) findViewById(R.id.ListView);
@@ -103,7 +108,7 @@ public class MainActivity extends AppCompatActivity
         //change the view of the recycleView
 
         linearLayoutManager = new LinearLayoutManager( this );
-        recyclerView.setLayoutManager(  linearLayoutManager);
+        recyclerView.setLayoutManager( linearLayoutManager );
         movieListAdapter = new MovieListAdapter( this, AppController.getmInstance().getMovieList() );
         recyclerView.setAdapter( movieListAdapter );
 
@@ -139,20 +144,12 @@ public class MainActivity extends AppCompatActivity
 //        recyclerView.addOnScrollListener(endlessScrollListener);
 
 
-
     }
-
-
-
-
-
-
-
 
 
     @Override
     public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById( id.drawer_layout );
+        DrawerLayout drawer = (DrawerLayout) findViewById( R.id.drawer_layout );
         if (drawer.isDrawerOpen( GravityCompat.START )) {
             drawer.closeDrawer( GravityCompat.START );
         } else {
@@ -189,7 +186,33 @@ public class MainActivity extends AppCompatActivity
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
+
+
+//        return true;
+
         getMenuInflater().inflate( R.menu.main, menu );
+
+        MenuItem menuItem = menu.findItem( R.id.searchView );
+
+        SearchView searchView = (SearchView) MenuItemCompat.getActionView( menuItem );
+
+        searchView.setIconifiedByDefault( false );
+        searchView.setOnQueryTextListener( this );
+
+        MenuItemCompat.setOnActionExpandListener( menuItem, new MenuItemCompat.OnActionExpandListener() {
+            @Override
+            public boolean onMenuItemActionExpand(MenuItem item) {
+                return true;
+            }
+
+            @Override
+            public boolean onMenuItemActionCollapse(MenuItem item) {
+                AppController.getmInstance().fetchMovieInfo();
+
+                return true;
+            }
+        } );
+
         return true;
     }
 
@@ -201,9 +224,20 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
+
+
+
+
+//        if (id == R.id.action_settings) {
+//            return true;
+//        }
+
+
+
+
+
+
+
 
         return super.onOptionsItemSelected( item );
     }
@@ -216,6 +250,7 @@ public class MainActivity extends AppCompatActivity
 
         if (id == R.id.nav_camera) {
             // Handle the camera action
+            AppController.getmInstance().fetchMovieInfo();
         } else if (id == R.id.nav_gallery) {
 
         } else if (id == R.id.nav_slideshow) {
@@ -248,4 +283,37 @@ public class MainActivity extends AppCompatActivity
 
         }
     }
-}
+
+    @Override
+    public boolean onCreateOptions(Menu menu) {
+        return false;
+    }
+
+
+    @Override
+         public boolean onQueryTextSubmit (String query){
+            System.out.println("Submitted Search"+ query);
+                    AppController.getmInstance().searchMovieByTitle( query );
+            return false;
+
+        }
+
+                 @Override
+         public boolean onQueryTextChange (String newText){
+             return false;
+
+        }
+
+
+    }
+
+
+
+
+
+
+
+
+
+
+
